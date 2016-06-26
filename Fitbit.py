@@ -3,7 +3,7 @@
 
 # # Collecting and Visualizing Fitbit Data with Python
 
-# In[491]:
+# In[195]:
 
 #!/usr/bin/python      
 get_ipython().magic(u'matplotlib inline')
@@ -14,11 +14,12 @@ import gather_keys_oauth2 as Oauth2
 import numpy as np
 import datetime
 import pandas as pd
+import csv
 
 
 # ## Access Fitbit API
 
-# In[492]:
+# In[196]:
 
 """for OAuth2.0"""
 USER_ID = 'your USER_ID'
@@ -39,14 +40,14 @@ auth2_client = fitbit.Fitbit(USER_ID, CLIENT_SECRET, oauth2=True, access_token=A
 
 # ## Pick a Date
 
-# In[493]:
+# In[197]:
 
 date='2016-06-13'
 
 
 # ## Collect Time Series Data
 
-# In[494]:
+# In[198]:
 
 """Timeseries data of Heartrate"""
 
@@ -77,7 +78,7 @@ HRmean = np.mean(HR)
 print "Avg HR:", HRmean, "Max HR:", HRmax, "Min HR:", HRmin
 
 
-# In[495]:
+# In[199]:
 
 """Timeseries data of Calories and Activity Level"""
 # Add activity level to text file
@@ -112,7 +113,7 @@ CalsSumm = np.sum(Cals)
 print "Total Calories burned:", CalsSumm, "Min Calories burned in a minute:", Calsmin, "Max Calories burned in a minute:", Calsmax 
 
 
-# In[496]:
+# In[200]:
 
 """Timeseries data of Steps"""
 
@@ -144,7 +145,7 @@ Stepsmean = np.mean(Steps)
 print 'Avg Steps:', Stepsmean, 'Max Steps:', Stepsmax
 
 
-# In[497]:
+# In[201]:
 
 """Timeseries data of Sleep"""
 fitbit_sleep = auth2_client.sleep(date)
@@ -177,11 +178,11 @@ print "Minutes Very Awake:", newSleep.count(3)
 
 # ## Plots
 
-# In[541]:
+# In[202]:
 
 ## TO DO
-# Fix "Sleep Quality Over Time", only include timestamps when sleeping 
-# Subplots
+# Fix "Sleep Quality Over Time", only include timestamps when sleeping or add Very Awake during non-sleeping period
+# Subplots / overlay "Time of Day" plots 
 
 
 # In[490]:
@@ -269,41 +270,80 @@ plt.show()
 
 # ## Collect Daily Summaries
 
-# In[ ]:
+# In[203]:
 
 ## TO DO
-#remove unicode u
-#save as text/csv files
+#Merge summaries into single file
 
 
-# In[535]:
+# In[204]:
 
-"""Sleep Daily Summary"""
-#1 API call
+"""SLEEP SUMMARY"""
 
-fitbit_sleep = auth2_client.sleep(date)
 SleepStats = fitbit_sleep['sleep']
-print SleepStats
+del SleepStats[0]['minuteData']
+keys = SleepStats[0].keys()
+keysclean=[x.encode('UTF8') for x in keys]
+print keysclean
+with open('SleepSummary.csv', 'wb') as output_file:
+    dict_writer = csv.DictWriter(output_file, keysclean)
+    dict_writer.writeheader()
+    dict_writer.writerows(SleepStats)
 
 
-# In[538]:
+# In[205]:
 
-"""Calories burned while Active"""
-active_cals = auth2_client.time_series('activities/activityCalories', base_date= date ,end_date=date)
-print active_cals
+""" ACTIVITIES SUMMARY """
+## TO DO
+#turn Distances/HR Zone Summaries into csv's
 
-
-# In[539]:
-
-"""Activity Log"""
 active_list = auth2_client.activities(date)
-print active_list
+activity_summary=active_list['summary']
 
+'''Distances Summary'''
 
-# In[540]:
+f5 = open('distances-summary.txt', 'w')
+distances=activities_summary['distances']
+for var in range(0, len(distances)):
+    value=str(distances[var]['distance'])
+    f5.write(value)
+    f5.write("\t")
+    activity=str(distances[var]['activity'])
+    f5.write(activity)
+    f5.write("\n")
+f5.close()
 
-"""Heart Rate Daily Summary"""
-fitbit_stats = auth2_client.intraday_time_series('activities/heart', base_date=date)
-stats = fitbit_stats['activities-heart']
-print stats
+'''HR Zones Summary'''
+
+f6 = open('HRzones-summary.txt', 'w')
+HRzones=activities_summary['heartRateZones']
+for var in range(0, len(HRzones)):
+    maxHR=str(HRzones[var]['max'])
+    f6.write(maxHR)
+    f6.write("\t")
+    caloriesOut=str(HRzones[var]['caloriesOut'])
+    f6.write(caloriesOut)
+    f6.write("\t")
+    minutes=str(HRzones[var]['minutes'])
+    f6.write(minutes)
+    f6.write("\t")   
+    name=str(HRzones[var]['name'])
+    f6.write(name)
+    f6.write("\t")
+    minHR=str(HRzones[var]['min'])
+    f6.write(minHR)
+    f6.write("\n")
+f6.close()
+
+"""Remaining Activity Data"""
+
+del activity_summary['distances']
+del activity_summary['heartRateZones']
+
+keys = activity_summary.keys()
+keysclean=[x.encode('UTF8') for x in keys]
+with open('ActivitiesSummary.csv', 'wb') as output_file:
+    dict_writer = csv.DictWriter(output_file, keysclean)
+    dict_writer.writeheader()
+    dict_writer.writerow(activity_summary)
 
