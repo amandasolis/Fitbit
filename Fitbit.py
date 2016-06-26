@@ -3,7 +3,7 @@
 
 # # Collecting and Visualizing Fitbit Data with Python
 
-# In[195]:
+# In[14]:
 
 #!/usr/bin/python      
 get_ipython().magic(u'matplotlib inline')
@@ -15,16 +15,18 @@ import numpy as np
 import datetime
 import pandas as pd
 import csv
+import seaborn as sns
+from scipy.stats import linregress 
 
 
 # ## Access Fitbit API
 
-# In[196]:
+# In[2]:
 
 """for OAuth2.0"""
 USER_ID = 'your USER_ID'
 CLIENT_SECRET = 'your CLIENT_SECRET'
- 
+
 """for obtaining Access-token and Refresh-token"""
 server = Oauth2.OAuth2Server(USER_ID, CLIENT_SECRET)
 server.browser_authorize()
@@ -40,18 +42,29 @@ auth2_client = fitbit.Fitbit(USER_ID, CLIENT_SECRET, oauth2=True, access_token=A
 
 # ## Pick a Date
 
-# In[197]:
+# In[3]:
 
+## TO DO
+#Loop through days
 date='2016-06-13'
 
 
 # ## Collect Time Series Data
 
-# In[198]:
+# In[4]:
+
+## TO DO for all
+#Save as CSV's + save all data to single CSV (each day's data on single row)
+
+
+# In[5]:
 
 """Timeseries data of Heartrate"""
 
-fitbit_stats = auth2_client.intraday_time_series('activities/heart', base_date=date, detail_level='1sec')
+## TO DO
+#Deal with missing values
+
+fitbit_stats = auth2_client.intraday_time_series('activities/heart', base_date=date, detail_level='1min')
 stats = fitbit_stats['activities-heart-intraday']['dataset']
 f1 = open('dataHR-timeseries.txt', 'w')
 HR = []
@@ -78,10 +91,10 @@ HRmean = np.mean(HR)
 print "Avg HR:", HRmean, "Max HR:", HRmax, "Min HR:", HRmin
 
 
-# In[199]:
+# In[6]:
 
 """Timeseries data of Calories and Activity Level"""
-# Add activity level to text file
+
 fitbit_cals = auth2_client.intraday_time_series('activities/log/calories', base_date=date, detail_level='1min')
 Calstats = fitbit_cals['activities-log-calories-intraday']['dataset']
 f2 = open('dataCals-timeseries.txt', 'w')
@@ -90,6 +103,8 @@ CalsTime = []
 ActivityLevel= []
 for var in range(0, len(Calstats)):
     f2.write(Calstats[var]['time'])
+    f2.write("\t")
+    f2.write(str(Calstats[var]['level']))
     f2.write("\t")
     f2.write(str(Calstats[var]['value']))
     f2.write("\n")
@@ -113,7 +128,7 @@ CalsSumm = np.sum(Cals)
 print "Total Calories burned:", CalsSumm, "Min Calories burned in a minute:", Calsmin, "Max Calories burned in a minute:", Calsmax 
 
 
-# In[200]:
+# In[7]:
 
 """Timeseries data of Steps"""
 
@@ -145,7 +160,7 @@ Stepsmean = np.mean(Steps)
 print 'Avg Steps:', Stepsmean, 'Max Steps:', Stepsmax
 
 
-# In[201]:
+# In[8]:
 
 """Timeseries data of Sleep"""
 fitbit_sleep = auth2_client.sleep(date)
@@ -176,22 +191,24 @@ print "Minutes Awake:", newSleep.count(2)
 print "Minutes Very Awake:", newSleep.count(3)
 
 
+
+
 # ## Plots
 
-# In[202]:
+# In[9]:
 
-## TO DO
-# Fix "Sleep Quality Over Time", only include timestamps when sleeping or add Very Awake during non-sleeping period
-# Subplots / overlay "Time of Day" plots 
+##TO DO
+#change sleep data values(10=asleep, 0=not recording, etc), add something to sleep data or sleep graph during awake period 
 
 
-# In[490]:
+# In[11]:
 
 """Histograms"""
 #HR Histogram
 plt.figure(1)
 #plt.subplot(211)
 plt.hist(HR, bins=len(stats), range=(HRmin,HRmax))
+#sns.distplot(HR);
 plt.title('Distribution of HR Values')
 plt.ylabel('Samples')
 plt.xlabel('HR Value')
@@ -200,6 +217,7 @@ plt.xlabel('HR Value')
 plt.figure(2)
 #plt.subplot(212)
 plt.hist(Cals, bins=len(Calstats), range=(Calsmin,Calsmax))
+#sns.distplot(Cals);
 plt.title('Distribution of Calories Burned Per Minute')
 plt.ylabel('Minutes')
 plt.xlabel('Calories Burned')
@@ -207,6 +225,7 @@ plt.xlabel('Calories Burned')
 #Steps Histogram
 plt.figure(3)
 plt.hist(Steps, bins=len(Stepsstats), range=(Stepsmin,Stepsmax))
+#sns.distplot(Steps);
 axes = plt.gca()
 axes.set_ylim([0,40])
 plt.title('Distribution of Steps Walked Per Minute')
@@ -216,6 +235,7 @@ plt.xlabel('Steps Walked')
 #Sleep Histogram
 fig = plt.figure(4)
 plt.hist(newSleep, range=(0.5,3.5))
+#sns.distplot(Sleep);
 plt.title('Distribution of Sleep Quality')
 plt.ylabel('Minutes')
 plt.xlabel('Sleep Quality')
@@ -226,6 +246,7 @@ fig.text(1,.5,quality)
 #HR Over Time
 plt.figure(5)
 datetimesHR = [datetime.datetime.strptime(t, "%H:%M:%S") for t in HRTime]
+datetimesHR1 = [t.replace(year=2016, month=6, day=13) for t in datetimesHR]
 #plt.subplot(211)
 plt.plot(datetimesHR, HR)
 plt.gcf().autofmt_xdate()
@@ -236,8 +257,9 @@ plt.xlabel('Time of Day')
 #Calories Over Time
 plt.figure(6)
 datetimesCals = [datetime.datetime.strptime(t, "%H:%M:%S") for t in CalsTime]
+datetimesCals1 = [t.replace(year=2016, month=6, day=13) for t in datetimesCals]
 #plt.subplot(212)
-plt.plot(datetimesCals, Cals)
+plt.plot(datetimesCals1, Cals)
 plt.gcf().autofmt_xdate()
 plt.title('Calories Over Time')
 plt.ylabel('Calories Burned ')
@@ -246,7 +268,8 @@ plt.xlabel('Time of Day')
 #Steps Over Time
 plt.figure(7)
 datetimesSteps = [datetime.datetime.strptime(t, "%H:%M:%S") for t in StepsTime]
-plt.plot(datetimesSteps, Steps)
+datetimesSteps1 = [t.replace(year=2016, month=6, day=13) for t in datetimesSteps]
+plt.plot(datetimesSteps1, Steps)
 plt.gcf().autofmt_xdate()
 plt.title('Steps Over Time')
 plt.ylabel('Steps Per Minute ')
@@ -255,7 +278,8 @@ plt.xlabel('Time of Day')
 #Sleep Quality Over Time
 fig=plt.figure(8)
 datetimesSleep = [datetime.datetime.strptime(t, "%H:%M:%S") for t in newSleepTime]
-plt.plot(datetimesSleep, newSleep)
+datetimesSleep1 = [t.replace(year=2016, month=6, day=13) for t in datetimesSleep]
+plt.plot(datetimesSleep1, newSleep)
 plt.gcf().autofmt_xdate()
 plt.gca().set_ylim([0,4])
 plt.title('Sleep Quality Over Time')
@@ -264,19 +288,60 @@ plt.xlabel('Time of Day')
 quality = '1.0=Asleep', '2.0=Awake', '3.0=Very Awake'
 fig.text(1,.5,quality)
 
-
 plt.show()
+
+
+# In[12]:
+
+fig=plt.figure(9)
+datetimesHR1 = [t.replace(year=2016, month=6, day=13) for t in datetimesHR]
+plt.plot(datetimesHR1, HR, 'r', label="Heart Rate")
+plt.plot(datetimesSteps1, Steps, 'g', label="Steps")
+plt.plot(datetimesCals1, Cals, 'b', label="Calories")
+plt.plot(datetimesSleep1, newSleep, 'k',label="Sleep")
+plt.gcf().autofmt_xdate()
+#plt.yscale('log') #Log Scale
+plt.legend( loc='center left', numpoints = 1, fancybox=True, shadow=True, bbox_to_anchor=(1, 0.5),ncol=2)
+plt.title('Overlay of Time Series Data')
+plt.ylabel('Value')
+plt.xlabel('Time of Day')
+plt.show()
+
+#Compute and plot linear regression stats (Calories vs Steps)
+fig=plt.figure(10)
+slope, intercept, r_value, p_value, std_err=linregress(Cals,Steps) #x and y are arrays or lists.
+plt.plot(Cals,Steps,'.')
+plt.title('Scatterplot: Steps vs Calories')
+plt.ylabel('Steps per Minute')
+plt.xlabel('Calories Burned per Minute')
+plt.plot(Cals, np.poly1d(np.polyfit(Cals, Steps, 1))(Cals),label="Regression Line")
+plt.legend( loc='center left', numpoints = 1, fancybox=True, shadow=True, bbox_to_anchor=(1, 0.5))
+plt.show()
+print "r-squared=", (r_value**2) #(measure of how well linear model fits a set of observations)
+
+
+# In[16]:
+
+## Plotting with seaborn
+#sns.set(color_codes=True)
+sns.set_palette("GnBu_d")
+
+sns.distplot(HR);
+
+x=np.array(Cals)
+y=np.array(Steps)
+sns.jointplot(x,y,kind="reg", joint_kws={'color':'green'})
 
 
 # ## Collect Daily Summaries
 
-# In[203]:
+# In[ ]:
 
 ## TO DO
 #Merge summaries into single file
 
 
-# In[204]:
+# In[ ]:
 
 """SLEEP SUMMARY"""
 
@@ -291,7 +356,7 @@ with open('SleepSummary.csv', 'wb') as output_file:
     dict_writer.writerows(SleepStats)
 
 
-# In[205]:
+# In[ ]:
 
 """ ACTIVITIES SUMMARY """
 ## TO DO
