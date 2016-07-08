@@ -1,9 +1,15 @@
 
 # coding: utf-8
 
-# # Collecting and Visualizing Fitbit Data with Python
+# # Collecting and Visualizing Fitbit Data for a Single Date
+# To start viewing your own data and saving it as a CSV, you really only need to adjust the following variables in this notebook:
+# 
+#   * USER_ID, CLIENT_SECRET (your own Fitbit credentials)
+#   * date
 
-# In[290]:
+# ## 1. Import the necessary Python libraries and modules: 
+
+# In[21]:
 
 #!/usr/bin/python      
 get_ipython().magic(u'matplotlib inline')
@@ -15,88 +21,49 @@ import numpy as np
 import datetime
 import pandas as pd
 import csv
+import re
 import seaborn as sns
 from scipy.stats import linregress 
+from IPython.display import display
 
 
-# ## Access Fitbit API
+# ## 2. Access the Fitbit API
+# Replace 'your USER_ID' and 'your CLIENT_SECRET' ([follow this tutorial to obtain these](http://blog.mr-but-dr.xyz/en/programming/fitbit-python-heartrate-howto/)) to access your Fitbit data:
 
-# In[291]:
+# In[7]:
 
-"""for OAuth2.0"""
-USER_ID = 'your USER_ID' 
-CLIENT_SECRET = 'your CLIENT_SECRET'
+"""provide your credentials for OAuth2.0"""
+USER_ID = 'your USER_ID' # should look something like this: '123A4B'
+CLIENT_SECRET = 'your CLIENT_SECRET' # should look something like this: 'c321fvdc59b4cc62156n9luv20k39072'
 
-"""for obtaining Access-token and Refresh-token"""
+"""obtain access and refresh tokens"""
 server = Oauth2.OAuth2Server(USER_ID, CLIENT_SECRET)
 server.browser_authorize()
-print('FULL RESULTS = %s' % server.oauth.token)
-print('ACCESS_TOKEN = %s' % server.oauth.token['access_token'])
  
 ACCESS_TOKEN = server.oauth.token['access_token']
 REFRESH_TOKEN = server.oauth.token['refresh_token']
  
-"""Authorization"""
+"""complete authorization"""
 auth2_client = fitbit.Fitbit(USER_ID, CLIENT_SECRET, oauth2=True, access_token=ACCESS_TOKEN, refresh_token=REFRESH_TOKEN)
 
 
-# ## Pick a Date
+# ## 3. Pick a Date
 
-# In[4]:
+# In[115]:
 
-## TO DO
-#Loop through days
-date='2016-06-13'
+date=str(datetime.date(2016, 3, 9))
 
 
-# ## Collect Time Series Data
+# ## 4. Collect Time-Series Data
+# 
 
-# In[4]:
-
-## TO DO 
-#save all data to single CSV (each day's data on single row)
-
-
-# In[264]:
-
-"""Timeseries data of Heartrate"""
-
-fitbit_stats = auth2_client.intraday_time_series('activities/heart', base_date=date, detail_level='1min')
-stats = fitbit_stats['activities-heart-intraday']['dataset']
-HR=pd.DataFrame(stats)
-HR.head(n=5)
-
-print "----HEART RATE STATS----"
-print 'First 5 Samples of Heart Rate Data:'
-print HR.head(n=5)
-print 'Total HR Samples (variable):', len(HR.index)
-
-HRmax = HR['value'].max()
-HRmin = HR['value'].min()
-HRmean = HR['value'].mean()
-
-print "Avg HR:", HRmean
-print "Max HR:", HRmax
-print "Min HR:", HRmin
-
-
-# In[263]:
-
-#Save HR Timeseries to CSV
-HR=HR.transpose()
-HR.columns = HR.iloc[0]
-HR=HR.reindex(HR.index.drop('time'))
-HR.to_csv('HR-timeseries.csv')
-
-
-# In[258]:
+# In[141]:
 
 """Timeseries data of Calories and Activity Level"""
 
 fitbit_cals = auth2_client.intraday_time_series('activities/log/calories', base_date=date, detail_level='1min')
 Calstats = fitbit_cals['activities-log-calories-intraday']['dataset']
 Cals=pd.DataFrame(Calstats)
-Cals.head(n=5)
 
 print "----CALORIE STATS----"
 print 'First 5 Rows of Calories Data:'
@@ -112,9 +79,6 @@ print "Total Calories burned:", CalsSumm
 print "Min Calories burned in a minute:", Calsmin 
 print "Max Calories burned in a minute:", Calsmax 
 
-
-# In[257]:
-
 #Save Calorie Timeseries to CSV
 del Cals['mets'] # delets 'mets' column 
 del Cals['level'] # delete 'level' column
@@ -122,18 +86,51 @@ del Cals['level'] # delete 'level' column
 Cals=Cals.transpose()
 Cals.columns = Cals.iloc[0]
 Cals=Cals.reindex(Cals.index.drop('time'))
+Cals=Cals.rename(index={'value': str(date)})
+
+full_index=Cals.columns.values
 Cals.to_csv('Cals-timeseries.csv')
 
 
-# In[62]:
+# In[143]:
+
+"""Timeseries data of Heartrate"""
+
+fitbit_stats = auth2_client.intraday_time_series('activities/heart', base_date=date, detail_level='1min')
+stats = fitbit_stats['activities-heart-intraday']['dataset']
+HR=pd.DataFrame(stats)
+
+print "----HEART RATE STATS----"
+print 'First 5 Samples of Heart Rate Data:'
+print HR.head(n=5)
+print 'Total HR Samples (variable):', len(HR.index)
+
+HRmax = HR['value'].max()
+HRmin = HR['value'].min()
+HRmean = HR['value'].mean()
+
+print "Avg HR:", HRmean
+print "Max HR:", HRmax
+print "Min HR:", HRmin
+
+#Save HR Timeseries to CSV
+HR=HR.transpose()
+HR.columns = HR.iloc[0]
+HR=HR.reindex(HR.index.drop('time'))
+HR2=HR.transpose()
+full_HR=HR2.reindex(full_index) # reindex with the full_index of times from Calorie series 
+HR=full_HR.transpose()
+HR=HR.rename(index={'value': str(date)})
+HR.to_csv('HR-timeseries.csv')
+
+
+# In[146]:
 
 """Timeseries data of Steps"""
 
 fitbit_steps = auth2_client.intraday_time_series('activities/steps', base_date=date, detail_level='1min')
 Stepsstats = fitbit_steps['activities-steps-intraday']['dataset']
-
 Steps=pd.DataFrame(Stepsstats)
-Steps.head(n=5)
 
 print "----STEPS STATS----"
 print 'First 5 Rows of Steps Data:'
@@ -150,82 +147,92 @@ print "Min Steps walked in a minute:", Stepsmin
 print "Max Steps walked in a minute:", Stepsmax 
 print "Average Steps walked in a minute:", Stepsmean
 
-
-# In[259]:
-
 #Save Steps Timeseries to CSV
 Steps=Steps.transpose()
 Steps.columns = Steps.iloc[0]
 Steps=Steps.reindex(Steps.index.drop('time'))
+Steps=Steps.rename(index={'value': str(date)})
 Steps.to_csv('Steps-timeseries.csv')
 
 
-# In[260]:
+# In[89]:
 
 """Timeseries data of Sleep"""
 fitbit_sleep = auth2_client.sleep(date)
-sleepstats = fitbit_sleep['sleep'][0]['minuteData']
+try: # try the following:
+    sleepstats = fitbit_sleep['sleep'][0]['minuteData']
+except IndexError: # create empty/filler data if no timeseries data collected:
+    filler=pd.DataFrame(np.empty(1400, dtype=object))
+    full_filler=filler.reindex(full_index) # reindex with the full_index of times from the Calorieseries function 
+    filler=full_filler.transpose()
+    filler=filler.rename(index={0: str(date)}) # rename the index (row name) with the corresponding date
+    Sleep=filler
+else: # check for multiple sleep records
+    if len(fitbit_sleep['sleep']) >= 2: # if multiple sleep records exist for one day, combine all records:
+        for record in range(1,len(fitbit_sleep['sleep'])-1): # loop through sleep records
+            temp=fitbit_sleep['sleep'][record]['minuteData'] # create temporary sleep record
+            sleepstats = sleepstats + [x for x in temp if x not in sleepstats] # append temporary record to full sleepstats
+    else: # if there are not multiple records, continue with initial sleepstats variable:
+        pass   
+    Sleep=pd.DataFrame(sleepstats)
+    Sleep['dateTime']=Sleep['dateTime'].astype(str)
+    sleeptimes=Sleep['dateTime']
+    i=0
+    for val in Sleep['dateTime']: 
+        val2=re.sub('30$', '00', val)
+        Sleep.set_value(i,'dateTime',val2)
+        i=i+1
 
 values=Sleep['value']
 SleepValues = values.astype(float)
 
-Sleep=pd.DataFrame(sleepstats)
-Sleep.head(n=5)
-
 print "----SLEEP STATS----"
 print 'First 5 Rows of Sleep Data:'
 print Sleep.head(n=5)
-print 'Total Sleep Minutes Sampled (fixed):', len(Sleep.index)
+print 'Total Sleep Minutes Sampled (variable):', len(Sleep.index)
 
 counts = Sleep['value'].value_counts().to_dict()
-counts['Asleep'] = counts.pop('1')
-counts['Awake'] = counts.pop('2')
-counts['Very Awake'] = counts.pop('3')
+counts['Asleep (1)'] = counts.pop('1')
+counts['Awake (2)'] = counts.pop('2')
+counts['Very Awake (3)'] = counts.pop('3')
 
 print counts
-
-
-# In[261]:
-
-#Save Sleep Timeseries to CSV
+    
 Sleep=Sleep.transpose()
-Sleep.columns = Sleep.iloc[0]
-Sleep=Sleep.reindex(Sleep.index.drop('dateTime'))
-Sleep.to_csv('Sleep-timeseries.csv')
+Sleep.columns = Sleep.iloc[0] # use 'time' stamp to rename columns with 00:00, 00:01 ... 23:58, 23:59
+Sleep=Sleep.reindex(Sleep.index.drop('dateTime')) # drop redundant information (time now reflected as column name)
+Sleep2=Sleep.transpose()
+full_Sleep=Sleep2.reindex(full_index) # reindex with the full_index of times from the Calorieseries function 
+Sleep=full_Sleep.transpose()
+Sleep=Sleep.rename(index={'value': str(date)}) 
+Sleep.to_csv('Sleep-timeseries3.csv')
 
 
-# ## Plots
+# ## 5. Plot Time-Series Data
 
-# In[9]:
-
-##TO DO
-#change sleep data values(10=asleep, 0=not recording, etc), add something to sleep data or sleep graph during awake period 
-
-
-# In[95]:
+# In[116]:
 
 """Histograms"""
-#HR Histogram
+
+# HR Histogram
 plt.figure(1)
-#plt.subplot(211)
-plt.hist(HR['value'], bins=len(stats), range=(HRmin,HRmax))
+plt.hist(HR.iloc[0], bins=len(stats), range=(HRmin,HRmax))
 #sns.distplot(HR);
 plt.title('Distribution of HR Values')
 plt.ylabel('Samples')
 plt.xlabel('HR Value')
 
-#Calories Histogram
+# Calories Histogram
 plt.figure(2)
-#plt.subplot(212)
-plt.hist(Cals['value'], bins=len(Calstats), range=(Calsmin,Calsmax))
+plt.hist(Cals.iloc[0], bins=len(Calstats), range=(Calsmin,Calsmax))
 #sns.distplot(Cals);
 plt.title('Distribution of Calories Burned Per Minute')
 plt.ylabel('Minutes')
 plt.xlabel('Calories Burned')
 
-#Steps Histogram
+# Steps Histogram
 plt.figure(3)
-plt.hist(Steps['value'], bins=len(Stepsstats), range=(Stepsmin,Stepsmax))
+plt.hist(Steps.iloc[0], bins=len(Stepsstats), range=(Stepsmin,Stepsmax))
 #sns.distplot(Steps);
 axes = plt.gca()
 axes.set_ylim([0,40])
@@ -233,7 +240,7 @@ plt.title('Distribution of Steps Walked Per Minute')
 plt.ylabel('Minutes')
 plt.xlabel('Steps Walked')
 
-#Sleep Histogram
+# Sleep Histogram
 fig = plt.figure(4)
 plt.hist(SleepValues, range=(0.5,3.5))
 #sns.distplot(Sleep);
@@ -244,41 +251,37 @@ quality = '1.0=Asleep', '2.0=Awake', '3.0=Very Awake'
 fig.text(1,.5,quality)
 
 """Line Plots"""
-#HR Over Time
+
+time=pd.to_datetime(full_index)
+time1 = [t.replace(year=2016, month=6, day=13) for t in time]
+
+# HR Over Time
 plt.figure(5)
-HRtimes=pd.to_datetime(HR['time'])
-HRtimes1 = [t.replace(year=2016, month=6, day=13) for t in HRtimes]
-plt.plot(HRtimes1, HR['value'])
+plt.plot(time1, HR.iloc[0])
 plt.gcf().autofmt_xdate()
 plt.title('Heart Rate Over Time')
 plt.ylabel('Heart Rate')
 plt.xlabel('Time of Day')
 
-#Calories Over Time
+# Calories Over Time
 plt.figure(6)
-Calstimes=pd.to_datetime(Cals['time'])
-Calstimes1 = [t.replace(year=2016, month=6, day=13) for t in Calstimes]
-plt.plot(Calstimes1, Cals['value'])
+plt.plot(time1, Cals.iloc[0])
 plt.gcf().autofmt_xdate()
 plt.title('Calories Over Time')
 plt.ylabel('Calories Burned ')
 plt.xlabel('Time of Day')
 
-#Steps Over Time
+# Steps Over Time
 plt.figure(7)
-Steptimes=pd.to_datetime(Steps['time'])
-Steptimes1 = [t.replace(year=2016, month=6, day=13) for t in Steptimes]
-plt.plot(Steptimes1, Steps['value'])
+plt.plot(time1, Steps.iloc[0])
 plt.gcf().autofmt_xdate()
 plt.title('Steps Over Time')
 plt.ylabel('Steps Per Minute ')
 plt.xlabel('Time of Day')
 
-#Sleep Quality Over Time
+# Sleep Quality Over Time
 fig=plt.figure(8)
-Sleeptimes=pd.to_datetime(Sleep['dateTime'])
-Sleeptimes1 = [t.replace(year=2016, month=6, day=13) for t in Sleeptimes]
-plt.plot(Sleeptimes1, SleepValues)
+plt.plot(time1, list(Sleep.iloc[0]))
 plt.gcf().autofmt_xdate()
 plt.gca().set_ylim([0,4])
 plt.title('Sleep Quality Over Time')
@@ -287,60 +290,24 @@ plt.xlabel('Time of Day')
 quality = '1.0=Asleep', '2.0=Awake', '3.0=Very Awake'
 fig.text(1,.5,quality)
 
-plt.show()
-
-
-# In[98]:
-
 fig=plt.figure(9)
-#datetimesHR1 = [t.replace(year=2016, month=6, day=13) for t in datetimesHR]
-plt.plot(HRtimes1, HR['value'], 'r', label="Heart Rate")
-plt.plot(Steptimes1, Steps['value'], 'g', label="Steps")
-plt.plot(Calstimes1, Cals['value'], 'b', label="Calories")
-plt.plot(Sleeptimes1, SleepValues, 'k',label="Sleep")
+plt.plot(time1, HR.iloc[0], 'r', label="Heart Rate")
+plt.plot(time1, Steps.iloc[0], 'g', label="Steps")
+plt.plot(time1, Cals.iloc[0], 'b', label="Calories")
+plt.plot(time1, list(Sleep.iloc[0]), 'k',label="Sleep")
 plt.gcf().autofmt_xdate()
 #plt.yscale('log') #Log Scale
 plt.legend( loc='center left', numpoints = 1, fancybox=True, shadow=True, bbox_to_anchor=(1, 0.5),ncol=2)
 plt.title('Overlay of Time Series Data')
 plt.ylabel('Value')
 plt.xlabel('Time of Day')
+
 plt.show()
 
-#Compute and plot linear regression stats (Calories vs Steps)
-fig=plt.figure(10)
-slope, intercept, r_value, p_value, std_err=linregress(Cals['value'],Steps['value']) #x and y are arrays or lists.
-plt.plot(Cals['value'],Steps['value'],'.')
-plt.title('Scatterplot: Steps vs Calories')
-plt.ylabel('Steps per Minute')
-plt.xlabel('Calories Burned per Minute')
-plt.plot(Cals['value'], np.poly1d(np.polyfit(Cals['value'], Steps['value'], 1))(Cals['value']),label="Regression Line")
-plt.legend( loc='center left', numpoints = 1, fancybox=True, shadow=True, bbox_to_anchor=(1, 0.5))
-plt.show()
-print "r-squared=", (r_value**2) #(measure of how well linear model fits a set of observations)
 
+# ## 6. Collect Daily Summary Data
 
-# In[99]:
-
-## Plotting with seaborn
-#sns.set(color_codes=True)
-sns.set_palette("GnBu_d")
-
-sns.distplot(HR['value']);
-
-x=np.array(Cals['value'])
-y=np.array(Steps['value'])
-sns.jointplot(x,y,kind="reg", joint_kws={'color':'green'})
-
-
-# ## Collect Daily Summaries
-
-# In[ ]:
-
-## TO DO
-#Merge summaries into single file
-
-
-# In[265]:
+# In[137]:
 
 """SLEEP SUMMARY"""
 
@@ -348,10 +315,11 @@ SleepStats = fitbit_sleep['sleep']
 del SleepStats[0]['minuteData']
 
 SleepSumm=pd.DataFrame(SleepStats)
+SleepSumm=SleepSumm.rename(index={0: str(date)})
 SleepSumm.to_csv('Sleep-Summary.csv')
 
 
-# In[289]:
+# In[138]:
 
 """ ACTIVITIES SUMMARY """
 
@@ -365,6 +333,7 @@ DistSumm=pd.DataFrame(distances)
 DistSumm=DistSumm.transpose()
 DistSumm.columns = DistSumm.iloc[0]
 DistSumm=DistSumm.reindex(DistSumm.index.drop('activity'))
+DistSumm=DistSumm.rename(index={'distance': str(date)})
 DistSumm.to_csv('Distances-Summary.csv')
 
 '''HR Zones Summary'''
@@ -378,6 +347,7 @@ HRflat=HRSumm.values.flatten() #Flatten dataframe into single row
 HRSumm2=pd.DataFrame(HRflat)
 HRSumm2=HRSumm2.transpose()
 HRSumm2=HRSumm2.rename(columns={0:"OutRange.caloriesOut", 1:"OR.max", 2:"OR.min", 3:"OR.minutes", 4:"FatBurn.caloriesOut", 5:"FB.max", 6:"FB.min", 7:"FB.minutes", 8:"Cardio.caloriesOut", 9:"C.max", 10:"C.min", 11:"C.minutes", 12:"Peak.caloriesOut", 13:"P.max", 14:"P.min", 15:"P.minutes"})
+HRSumm2=HRSumm2.rename(index={0: str(date)})
 HRSumm2.to_csv('HR-Summary.csv')
 
 """Remaining Activity Data Summary"""
@@ -389,5 +359,38 @@ ActivitiesSumm=pd.DataFrame(activities_summary.items())
 ActivitiesSumm=ActivitiesSumm.transpose()
 ActivitiesSumm.columns = ActivitiesSumm.iloc[0]
 ActivitiesSumm=ActivitiesSumm.reindex(ActivitiesSumm.index.drop(0))
+ActivitiesSumm=ActivitiesSumm.rename(index={1: str(date)})
 ActivitiesSumm.to_csv('Activities-Summary.csv')
+
+
+# ## 7. Explore Files/Data Frames! 
+
+# In[148]:
+
+from IPython.display import display
+"""preview the first 5 rows of each data frame"""
+
+print "Activity Summary"
+display(ActivitiesSumm)
+
+print "Distances Summary"
+display(DistSumm)
+
+print "Heart Rate Zones Summary"
+display(HRSumm2)
+
+print "Sleep Summary"
+display(SleepSumm)
+
+print "Sleep Time-Series"
+display(Sleep)
+
+print "Calories Time-Series"
+display(Cals)
+
+print "Steps Time-Series"
+display(Steps)
+
+print "Heart Rate Time-Series"
+display(HR)
 
