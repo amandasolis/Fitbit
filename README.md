@@ -20,12 +20,12 @@
 
 ##Usage
 
-**View/download data for one date (“1DayFitbit.ipynb”):**  
+**A. View/download data for one date (“1DayFitbit.ipynb”):**  
 1. Drag the file “1DayFitbit.ipynb” into your “python-fitbit” folder  
 2. In Terminal, go into the “python-fitbit” directory using `cd python-fitbit` and start a Jupyter Notebook by typing `jupyter notebook`  
 3. Open “1DayFitbit.ipynb” and follow the instructions to collect and visualize your data  
 
-**View/download data for a range of dates (“FitbitRange.ipynb”):**    
+**B. View/download data for a range of dates (“FitbitRange.ipynb”):**    
 1.  Drag the file “FitbitRange.ipynb” into your “python-fitbit” folder  
 2.  Start Terminal and enter the “python-fitbit” directory using `cd python-fitbit`  
 3.  Create folders to store your data by running `mkdir -p Data/{Cals_Timeseries,Sleep_Summary,Sleep_Timeseries,Activities_Summary,Distances_Summary,HR_Summary,Steps_Timeseries,HR_Timeseries}`  
