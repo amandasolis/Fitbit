@@ -9,9 +9,9 @@
 ##Installation
 
 **Register your API:**  
-[Follow this tutorial to obtain credentials](http://blog.mr-but-dr.xyz/en/programming/fitbit-python-heartrate-howto/)
-- This will give you your access and refresh tokens to access your data
-- This will have you download the “python-fitbit” library
+[Follow this tutorial to obtain credentials](http://blog.mr-but-dr.xyz/en/programming/fitbit-python-heartrate-howto/)  
+-This will give you your access and refresh tokens to access your data  
+-This will have you download the “python-fitbit” library
 
 **Install the Python requirements:**  
 1. Clone this repository  
