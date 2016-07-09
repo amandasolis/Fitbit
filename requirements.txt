@@ -1,11 +1,5 @@
-fitbit
-gather_keys_oauth2
 numpy
 pandas
-datetime
-csv
-re
-IPython.display
-matplotlib.pyplot
+matplotlib
 seaborn
-scipy.stats
+scipy
