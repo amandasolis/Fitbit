@@ -2,6 +2,8 @@
 
 ### Python scripts for accessing Fitbit’s API and downloading time-series and daily summary data.
 
+![alt text](example_output.png "Example Output")
+
 ##Requirements  
 - Python 2.7+
 - Fitbit Charge HR
