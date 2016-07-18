@@ -33,3 +33,11 @@
 3.  Create folders to store your data by running `mkdir -p Data/{Cals_Timeseries,Sleep_Summary,Sleep_Timeseries,Activities_Summary,Distances_Summary,HR_Summary,Steps_Timeseries,HR_Timeseries}`  
 4.  Start a Jupyter Notebook by typing `jupyter notebook`  
 5.  Open “FitbitRange.ipynb” and follow the instructions to collect your data  
+
+**C. View/download 1-second interval heart rate data for a range of dates (“FitbitFullHR.ipynb”):**    
+1.  Drag the file “FitbitFullHR.ipynb” into your “python-fitbit” folder  
+2.  Start Terminal and enter the “python-fitbit” directory using `cd python-fitbit`  
+3.  Create folders to store your data by running `mkdir -p Data/HR_Second_Timeseries`  
+4.  Start a Jupyter Notebook by typing `jupyter notebook`  
+5.  Open “FitbitFullHR.ipynb” and follow the instructions to collect your heart rate data  
+
