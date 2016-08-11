@@ -2,8 +2,10 @@
 
 ### Python scripts for accessing Fitbit’s API and downloading time-series and daily summary data.
 
-![alt text](example_output.png "Example Output")
-![alt text](example_output1.png "Example Output")
+![alt text](PlotScreenshots/DayofWeekBoxPlot.png "Example Output")
+![alt text](PlotScreenshots/HourlyHeatmap.png "Example Output")
+![alt text](PlotScreenshots/DailyStepCount.png "Example Output")
+![alt text](PlotScreenshots/example_output.png "Example Output")
 
 
 ##Requirements  
